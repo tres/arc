@@ -16,10 +16,13 @@ defmodule Mix.Tasks.Arc do
         mix arc.g avatar   # creates web/uploaders/avatar.ex
     """
 
-    def run([model_name]) do
+    def run([model_name, with_phx_layout \\ false]) do
       app_name = Mix.Project.config[:app]
       project_module_name = camelize(to_string(app_name))
-      generate_uploader_file(model_name, project_module_name)
+      case with_phx_layout do
+        true -> generate_phx_uploader_file(model_name, project_module_name)
+        false -> generate_uploader_file(model_name, project_module_name)
+      end
     end
 
     def run(_) do
@@ -28,6 +31,16 @@ defmodule Mix.Tasks.Arc do
 
     defp generate_uploader_file(model_name, project_module_name) do
       model_destination = Path.join(System.cwd(), "/web/uploaders/#{underscore(model_name)}.ex")
+      create_uploader(model_name, project_module_name, model_destination)
+    end
+
+    defp generate_phx_uploader_file(model_name, project_module_name) do
+      app_name = Mix.Project.config[:app]
+      model_destination = Path.join(System.cwd(), "/#{app_name}_web/uploaders/#{underscore(model_name)}.ex")
+      create_uploader(model_name, project_module_name, model_destination)
+    end
+
+    defp create_uploader(model_name, project_module, model_destination) do
       create_file model_destination, uploader_template(
           model_name: model_name,
           uploader_model_name: Module.concat(project_module_name, camelize(model_name))
