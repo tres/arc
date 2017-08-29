@@ -1,6 +1,6 @@
 defmodule Arc.Transformations.Convert do
   def apply(cmd, file, args, format) do
-    extension = if format, do: ".#{ format}", else:  nil
+    extension = if format, do: ".#{format}", else:  nil
     new_path = Arc.File.generate_temporary_path(file, extension)
     args     = if is_function(args), do: args.(file.path, new_path), else: [file.path | (String.split(args, " ") ++  [new_path])]
     args     = if is_binary(args), do:  String.split(args, " ", trim: true), else: args
