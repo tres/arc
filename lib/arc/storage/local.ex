@@ -1,4 +1,8 @@
 defmodule Arc.Storage.Local do
+  def put(definition, version, {files, scope}) when is_list(files) do
+    Enum.map(files, fn(file) -> put(definition, version, {file, scope}) end)
+  end
+
   def put(definition, version, {file, scope}) do
     destination_dir = definition.storage_dir(version, {file, scope})
     path = Path.join(destination_dir, file.file_name)

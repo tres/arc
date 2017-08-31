@@ -39,9 +39,23 @@ defmodule Arc.Actions.Store do
   end
 
   defp handle_responses(responses, filename) do
-    errors = Enum.filter(responses, fn(resp) -> elem(resp, 0) == :error end) |> Enum.map(fn(err) -> elem(err, 1) end)
+    errors = Enum.map(responses, fn(response) -> handle_response(response, filename, [])  end)
+             |> List.flatten
     if Enum.empty?(errors), do: {:ok, filename}, else: {:error, errors}
   end
+
+  defp handle_response([head | tail], filename, errors) do
+    handle_response(tail, filename, errors ++ [handle_response(head, filename, errors)])
+  end
+
+  defp handle_response({:error, err}, filename, errors) do
+    Enum.map(fn(err) -> elem(err, 1) end)
+  end
+
+  defp handle_response(_, _, errors) do
+    errors
+  end
+
 
   defp version_timeout do
     Application.get_env(:arc, :version_timeout) || 15_000
@@ -57,9 +71,17 @@ defmodule Arc.Actions.Store do
     case Arc.Processor.process(definition, version, {file, scope}) do
       {:error, error} -> {:error, error}
       {:ok, file} ->
-        file_name = Arc.Definition.Versioning.resolve_file_name(definition, version, {file, scope})
-        file      = %Arc.File{file | file_name: file_name}
-        definition.__storage.put(definition, version, {file, scope})
+        if is_list(file) do
+          files = Enum.with_index(file)
+          |> Enum.map(fn({f, idx}) ->
+                            file_name = Arc.Definition.Versioning.resolve_file_name(definition, version, {f, scope}, idx)
+                            file      = %Arc.File{f | file_name: file_name} end)
+          definition.__storage.put(definition, version, {files, scope})
+        else
+          file_name = Arc.Definition.Versioning.resolve_file_name(definition, version, {file, scope})
+          file      = %Arc.File{file | file_name: file_name}
+          definition.__storage.put(definition, version, {file, scope})
+        end
     end
   end
 end
