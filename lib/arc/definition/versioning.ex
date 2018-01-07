@@ -30,13 +30,21 @@ defmodule Arc.Definition.Versioning do
 
   defp converted_file_name_with_frame(name, ext, saved_versions, options) do
     name_with_ext = "#{name}.#{ext}"
-    case (Enum.member?(saved_versions, name_with_ext)) do
-      true -> name_with_ext
-      false ->
-        frame = if (options[:frame]), do: Integer.parse(options[:frame]), else: 0
-        name_with_frame = "#{name}-#{frame}.#{ext}"
-        if (Enum.member?(saved_versions, name_with_frame)), do: name_with_frame, else: nil
+    if (Enum.member?(saved_versions, name_with_ext)), do: name_with_ext, else: filename(name, ext, saved_versions, options)
+  end
+
+  defp filename(name, ext, saved_versions, %{frame: frame }) do
+    frame_num = case Integer.parse("#{frame}") do
+      {num, ""} -> num
+      _ -> 0
     end
+
+    name_with_frame = "#{name}-#{frame}.#{ext}"
+    if (Enum.member?(saved_versions, name_with_frame)), do: name_with_frame, else: nil
+  end
+
+  defp filename(name, ext, saved_versions, _) do
+    filename(name, ext, saved_versions, %{frame: 0})
   end
 
 
