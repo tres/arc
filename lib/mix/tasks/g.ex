@@ -9,37 +9,44 @@ defmodule Mix.Tasks.Arc do
     @moduledoc """
     A task for generating arc uploader modules.
 
-    The generated attachment definition is stored in `web/uploaders`.
-
-    Pass "phx_layout" to use Phoenix 1.3 directory layout 
-    when generating attachment definition (i.e. [APP_NAME]_web/uploaders/).
+    If generating an uploader in a Phoenix project, your a uploader will be generated in
+    lib/[APP_NAME]_web/uploaders/
 
     ## Example
 
-        mix arc.g avatar   # creates web/uploaders/avatar.ex
+        mix arc.g avatar # creates  lib/[APP_NAME]_web/uploaders/avatar.ex
 
-        mix arc.g avatar phx_layout    # creates [APP_NAME]_web/uploaders/avatar.ex
+
+    If not generating an uploader in a Phoenix project, then you must pass the path to where the
+    uploader should be generated.
+
+    ## Example
+
+        mix arc.g avatar  uploaders/avatar.ex # creates uploaders/avatar.ex
     """
 
     def run([model_name]) do
-      run([model_name, "standard_layout"])
+      app_name = Mix.Project.config[:app]
+      if (File.exists?("lib/#{app_name}_web/")) do
+        project_module_name = camelize(to_string(app_name))
+        generate_phx_uploader_file(model_name, project_module_name)
+      else
+        raise "path must be passed when generating an uploader."
+      end
     end
 
-    def run([model_name, layout]) do
+    def run([model_name, path]) do
       app_name = Mix.Project.config[:app]
       project_module_name = camelize(to_string(app_name))
-      case layout do
-        "standard_layout" ->  generate_uploader_file(model_name, project_module_name)
-        "phx_layout" -> generate_phx_uploader_file(model_name, project_module_name)
-      end
+      generate_uploader_file(model_name, project_module_name, path)
     end
 
     def run(_) do
       IO.puts "Incorrect syntax. Please try mix arc.g <model_name>"
     end
 
-    defp generate_uploader_file(model_name, project_module_name) do
-      model_destination = Path.join(System.cwd(), "/web/uploaders/#{underscore(model_name)}.ex")
+    defp generate_uploader_file(model_name, project_module_name, path) do
+      model_destination = Path.join(System.cwd(), "#{path}/#{underscore(model_name)}.ex")
       create_uploader(model_name, project_module_name, model_destination)
     end
 
