@@ -21,30 +21,26 @@ defmodule Arc.Definition.Versioning do
     end
   end
 
-  defp converted_file_name(name, ext, saved_versions, options) do
-    case saved_versions do
-      v when v in [nil, []] -> "#{name}.#{ext}" #legacy behavior when there's no saved versions available
-      _ ->  converted_file_name_with_frame(name, ext, saved_versions, options)
-    end
+  defp converted_file_name(name, ext, saved_versions, options) when (is_binary(saved_versions)) do
+    list = String.split(saved_versions, "::")
+    converted_file_name(name, ext, list, options)
   end
 
-  defp converted_file_name_with_frame(name, ext, saved_versions, options) do
-    name_with_ext = "#{name}.#{ext}"
-    if (Enum.member?(saved_versions, name_with_ext)), do: name_with_ext, else: filename(name, ext, saved_versions, options)
+  defp converted_file_name(name, ext, saved_versions, options) when (is_list(saved_versions)) do
+    filename(name, ext, saved_versions, options)
   end
 
-  defp filename(name, ext, saved_versions, %{frame: frame }) do
+  defp filename(name, ext, saved_versions, options) do
+    frame = options[:frame]
     frame_num = case Integer.parse("#{frame}") do
       {num, ""} -> num
       _ -> 0
     end
-
-    name_with_frame = "#{name}-#{frame}.#{ext}"
-    if (Enum.member?(saved_versions, name_with_frame)), do: name_with_frame, else: nil
+    "#{name}-#{frame}.#{ext}"
   end
 
-  defp filename(name, ext, saved_versions, _) do
-    filename(name, ext, saved_versions, %{frame: 0})
+  defp filename(name, ext, saved_versions, derpmanistan) do
+    filename(name, ext, saved_versions, [frame: 0])
   end
 
 

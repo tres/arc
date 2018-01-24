@@ -109,7 +109,7 @@ defmodule Arc.Actions.Store do
         if is_list(file) do
           files = Enum.with_index(file)
           |> Enum.map(fn({f, idx}) ->
-                            file_name = Arc.Definition.Versioning.resolve_file_name(definition, version, {f, scope}, idx)
+                            file_name = Arc.Definition.Versioning.resolve_file_name(definition, version, {f, scope}, [frame: idx])
                             file      = %Arc.File{f | file_name: file_name} end)
           definition.__storage.put(definition, version, {files, scope})
         else
